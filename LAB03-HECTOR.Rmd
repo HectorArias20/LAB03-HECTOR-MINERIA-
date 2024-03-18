@@ -1,0 +1,148 @@
+---
+title: "LAB03-HECTOR"
+author: "HECTOR"
+date: "2024-03-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+
+- Cargar el set de datos en tu ambiente de trabajo:
+
+# Cargar el set de datos
+datos <- read.csv("runners statistics.csv")
+
+# Visualizar las primeras filas del conjunto de datos
+head(datos)
+
+
+
+- Exploración Inicial de los Datos:
+
+# Obtener información sobre las columnas y tipos de datos
+str(datos)
+
+# Realizar los principales resúmenes estadísticos
+summary(datos)
+
+
+- Limpieza y Tratamiento de Datos:
+
+# Cambiar los nombres de las columnas a español
+colnames(datos) <- c("identificacion", "lugar", "genero", "edad", "hogar", "tiempo", "Velocidad", "fecha")
+
+
+# Determinar y eliminar variables genéricas o que no aportan valor
+datos <- datos[, !colnames(datos) %in% c("variable_generica")]
+
+
+# Eliminar elementos duplicados
+datos <- unique(datos)
+
+
+# Convertir variables categóricas a factor y numéricas a double o numeric
+datos$genero <- as.factor(datos$genero)
+datos$edad <- as.numeric(datos$edad)
+
+
+# Determinar valores nulos y su cantidad
+nulos <- sum(is.na(datos))
+
+
+
+# Determinar valores atípicos mediante boxplots
+boxplot(datos$edad)
+
+
+# Calcular márgenes de valores atípicos
+lower_bound <- quantile(datos$edad, 0.25) - 1.5 * IQR(datos$edad)
+upper_bound <- quantile(datos$edad, 0.75) + 1.5 * IQR(datos$edad)
+
+# Histograma de la variable edad
+hist(datos$edad)
+
+# Gráfica de dispersión entre edad y velocidad
+plot(datos$edad, datos$Velocidad)
+
+
+
+# Crear función para corregir datos nulos
+corregir_nulos <- function(data) {
+  # Reemplazar los valores nulos por la mediana de la variable
+  for (col in colnames(data)) {
+    if (anyNA(data[[col]])) {
+      data[[col]][is.na(data[[col]])] <- median(data[[col]], na.rm = TRUE)
+    }
+  }
+  return(data)
+}
+
+# Crear función para corregir valores atípicos
+corregir_atipicos <- function(data) {
+  # Calcular límites inferior y superior para identificar valores atípicos
+  for (col in colnames(data)) {
+    if (is.numeric(data[[col]])) {
+      q1 <- quantile(data[[col]], 0.25)
+      q3 <- quantile(data[[col]], 0.75)
+      iqr <- q3 - q1
+      lower_bound <- q1 - 1.5 * iqr
+      upper_bound <- q3 + 1.5 * iqr
+      
+  # Reemplazar valores atípicos por el valor del límite más cercano
+      data[[col]][data[[col]] < lower_bound] <- lower_bound
+      data[[col]][data[[col]] > upper_bound] <- upper_bound
+    }
+  }
+  return(data)
+}
+datos_corregidos_nulos <- corregir_nulos(datos)
+datos_corregidos_atipicos <- corregir_atipicos(datos_corregidos_nulos)
+
+
+
+- Visualización de Datos:
+
+# Gráficas de la cantidad de registros para variables categóricas
+library(ggplot2)
+ggplot(datos, aes(x = lugar)) + geom_bar()
+
+
+
+
+- Análisis de Relaciones de Datos:
+
+# Análisis univariable y bivariable
+correlation_matrix <- cor(datos[, c("edad", "Velocidad")])
+
+# Verificar correlación
+print(correlation_matrix)
+
+# Normalización Z-score
+datos_normalizados <- scale(datos[, c("edad", "Velocidad")])
+
